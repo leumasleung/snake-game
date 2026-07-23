@@ -168,7 +168,7 @@
 
     <div id="overlay" class="overlay">
       <h1 id="overlay-title">👑 青蛙王子歷險記</h1>
-      <p id="overlay-desc">吃紅蘋果 🍎 增加長度<br>吃減肥蘋果 🍏 (-1/-2) 縮短長度避開怪獸！<br>小心巡邏惡魔怪獸與城堡城牆！</p>
+      <p id="overlay-desc">吃紅蘋果 🍎 增加長度（地圖有多顆蘋果）<br>吃減肥蘋果 🍏 (-1/-2) 縮短身體避開怪獸！<br>⚠️ 身體任何部位碰到怪物都會 GAME OVER！</p>
       <button id="start-btn" class="btn-main">START</button>
     </div>
 
@@ -230,9 +230,13 @@ function startGame() {
   items = [];
   monsters = [];
   
+  // 🍎 設定同時存在 3 個紅蘋果 + 2 個減肥蘋果
+  spawnItem('+1');
+  spawnItem('+1');
   spawnItem('+1');
   spawnItem('-1');
   spawnItem('-2');
+
   spawnMonster();
   spawnMonster();
 
@@ -327,12 +331,38 @@ function spawnMonster() {
   monsters.push({ x: pos.x, y: pos.y, dx: dir.x, dy: dir.y });
 }
 
+// 👹 怪物隨機路徑 AI (Random Walk)
 function moveMonsters() {
+  const allDirs = [{x:1, y:0}, {x:-1, y:0}, {x:0, y:1}, {x:0, y:-1}];
+
   for (let m of monsters) {
+    // 有 35% 機率隨機改變方向（增添隨機走位感覺）
+    if (Math.random() < 0.35) {
+      let randomDir = allDirs[Math.floor(Math.random() * allDirs.length)];
+      m.dx = randomDir.x;
+      m.dy = randomDir.y;
+    }
+
     let nextX = m.x + m.dx;
     let nextY = m.y + m.dy;
-    if (nextX <= 0 || nextX >= TILE_COUNT - 1) { m.dx *= -1; nextX = m.x + m.dx; }
-    if (nextY <= 0 || nextY >= TILE_COUNT - 1) { m.dy *= -1; nextY = m.y + m.dy; }
+
+    // 撞牆隨機換向，確保留在內側
+    if (nextX <= 0 || nextX >= TILE_COUNT - 1 || nextY <= 0 || nextY >= TILE_COUNT - 1) {
+      // 篩選出不會撞牆的方向
+      let validDirs = allDirs.filter(d => {
+        let testX = m.x + d.x;
+        let testY = m.y + d.y;
+        return testX > 0 && testX < TILE_COUNT - 1 && testY > 0 && testY < TILE_COUNT - 1;
+      });
+      if (validDirs.length > 0) {
+        let newDir = validDirs[Math.floor(Math.random() * validDirs.length)];
+        m.dx = newDir.x;
+        m.dy = newDir.y;
+        nextX = m.x + m.dx;
+        nextY = m.y + m.dy;
+      }
+    }
+
     m.x = nextX;
     m.y = nextY;
   }
@@ -344,10 +374,12 @@ function gameLoop() {
 
   const head = { x: snake[0].x + dx, y: snake[0].y + dy };
 
+  // 1. 撞城牆檢測
   if (head.x <= 0 || head.x >= TILE_COUNT - 1 || head.y <= 0 || head.y >= TILE_COUNT - 1) {
     return gameOver("撞到城堡城牆！");
   }
 
+  // 2. 撞自身檢測
   for (let seg of snake) {
     if (head.x === seg.x && head.y === seg.y) {
       return gameOver("青蛙王子自己打結了！");
@@ -356,6 +388,7 @@ function gameLoop() {
 
   snake.unshift(head);
 
+  // 3. 吃道具檢測
   let ateItem = false;
   for (let i = 0; i < items.length; i++) {
     if (head.x === items[i].x && head.y === items[i].y) {
@@ -365,8 +398,7 @@ function gameLoop() {
 
       if (type === '+1') {
         score += 100;
-        spawnItem('+1');
-        if (Math.random() < 0.5) spawnItem(Math.random() < 0.5 ? '-1' : '-2');
+        spawnItem('+1'); // 補回一個紅蘋果
       } else if (type === '-1' || type === '-2') {
         let shrink = type === '-1' ? 1 : 2;
         score += 60;
@@ -374,7 +406,7 @@ function gameLoop() {
           if (snake.length > 1) snake.pop();
           else return gameOver("青蛙王子縮小到消失了！");
         }
-        spawnItem(type);
+        spawnItem(type); // 補回減肥藥
       }
       break;
     }
@@ -382,10 +414,15 @@ function gameLoop() {
 
   if (!ateItem) snake.pop();
 
+  // 4. 移動怪物
   moveMonsters();
+
+  // 💥 5. 檢測「蛇的任何身體部位」是否碰到怪物
   for (let m of monsters) {
-    if (head.x === m.x && head.y === m.y) {
-      return gameOver("被惡魔怪獸吞噬！");
+    for (let seg of snake) {
+      if (seg.x === m.x && seg.y === m.y) {
+        return gameOver("碰到惡魔怪獸！");
+      }
     }
   }
 
