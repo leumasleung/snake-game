@@ -3,19 +3,19 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>極限貪食蛇 Mobile</title>
+  <title>青蛙王子歷險記 - 怪獸貪食蛇</title>
   <style>
     * {
       box-sizing: border-box;
-      user-select: none; /* 防止手機按壓時跳出選取文字 */
+      user-select: none;
       -webkit-user-select: none;
-      touch-action: manipulation; /* 停用手機雙擊縮放 */
+      touch-action: manipulation;
     }
 
     body {
       margin: 0;
       padding: 0;
-      background-color: #121212;
+      background-color: #111625;
       color: #fff;
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
       display: flex;
@@ -24,174 +24,162 @@
       overflow: hidden;
     }
 
-    /* 上方 100% 幅寬區域 (遊戲畫面區) */
     .game-container {
       position: relative;
       width: 100vw;
-      background-color: #000;
+      background-color: #0b0e14;
       display: flex;
       justify-content: center;
       align-items: center;
+      border-bottom: 4px solid #2a344d;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.5);
     }
 
     canvas {
       width: 100vw;
-      height: 100vw; /* 保持正方形比例 (也可隨需求改為 calc) */
-      max-height: 50vh; /* 避免在長螢幕上佔據太多空間 */
-      background-color: #0d0d0d;
+      height: 100vw;
+      max-height: 52vh;
+      background-color: #1a2332;
       display: block;
     }
 
-    /* 遊戲狀態覆蓋層 (Start / Pause / Game Over) */
     .overlay {
       position: absolute;
       top: 0;
       left: 0;
       width: 100%;
       height: 100%;
-      background: rgba(0, 0, 0, 0.75);
+      background: rgba(10, 15, 26, 0.88);
+      backdrop-filter: blur(4px);
       display: flex;
       flex-direction: column;
       justify-content: center;
       align-items: center;
       z-index: 10;
+      text-align: center;
+      padding: 20px;
     }
 
     .overlay h1 {
-      margin: 0 0 10px 0;
-      font-size: 24px;
-      color: #4CAF50;
+      margin: 0 0 8px 0;
+      font-size: 26px;
+      color: #76ff03;
+      text-shadow: 0 0 10px rgba(118, 255, 3, 0.5);
     }
 
     .overlay p {
       margin: 0 0 20px 0;
       font-size: 14px;
-      color: #ccc;
+      color: #b0bec5;
+      line-height: 1.5;
     }
 
     .btn-main {
-      padding: 12px 32px;
+      padding: 14px 36px;
       font-size: 18px;
       font-weight: bold;
-      background-color: #4CAF50;
+      background: linear-gradient(135deg, #4caf50, #2e7d32);
       color: white;
-      border: none;
-      border-radius: 25px;
-      box-shadow: 0 4px 10px rgba(76, 175, 80, 0.4);
+      border: 2px solid #81c784;
+      border-radius: 30px;
+      box-shadow: 0 6px 15px rgba(76, 175, 80, 0.4);
       cursor: pointer;
     }
 
-    .btn-main:active {
-      transform: scale(0.95);
-    }
-
-    /* HUD 分數資訊列 */
     .hud {
       position: absolute;
-      top: 10px;
-      left: 10px;
-      right: 10px;
+      top: 12px;
+      left: 16px;
+      right: 16px;
       display: flex;
       justify-content: space-between;
-      font-size: 14px;
-      font-weight: bold;
-      color: #fff;
-      text-shadow: 1px 1px 2px #000;
+      font-size: 15px;
+      font-weight: 800;
+      color: #ffffff;
       pointer-events: none;
       z-index: 5;
     }
 
-    /* 下方操作控制區 */
+    .hud-badge {
+      background: rgba(0, 0, 0, 0.6);
+      padding: 5px 12px;
+      border-radius: 20px;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
     .controls-area {
       flex: 1;
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: 15px 20px;
-      background-color: #1a1a1a;
-    }
-
-    /* 左側系統按鈕區 (Pause / Resume) */
-    .system-controls {
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
+      padding: 15px 24px;
+      background: linear-gradient(180deg, #151c2c 0%, #0d121d 100%);
     }
 
     .btn-sys {
-      padding: 10px 16px;
-      background: #333;
-      color: #fff;
-      border: 1px solid #555;
-      border-radius: 8px;
+      padding: 12px 20px;
+      background: linear-gradient(135deg, #2c384e, #1e2738);
+      color: #e0e6ed;
+      border: 1px solid #415273;
+      border-radius: 12px;
       font-size: 14px;
+      font-weight: bold;
     }
 
-    .btn-sys:active {
-      background: #555;
-    }
-
-    /* 下方右側十字鍵 (D-Pad) */
     .dpad {
       position: relative;
-      width: 140px;
-      height: 140px;
+      width: 150px;
+      height: 150px;
     }
 
     .dpad-btn {
       position: absolute;
-      width: 44px;
-      height: 44px;
-      background-color: #333;
-      border: 2px solid #555;
-      border-radius: 8px;
-      color: white;
-      font-size: 18px;
+      width: 48px;
+      height: 48px;
+      background: linear-gradient(145deg, #2a354b, #1b2333);
+      border: 2px solid #3d4f70;
+      border-radius: 12px;
+      color: #76ff03;
+      font-size: 20px;
       display: flex;
       justify-content: center;
       align-items: center;
-      box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+      box-shadow: 0 5px 10px rgba(0,0,0,0.4);
     }
 
     .dpad-btn:active {
-      background-color: #4CAF50;
-      border-color: #81C784;
+      background: #76ff03;
+      color: #111;
     }
 
-    .dpad-up    { top: 0; left: 48px; }
-    .dpad-down  { bottom: 0; left: 48px; }
-    .dpad-left  { top: 48px; left: 0; }
-    .dpad-right { top: 48px; right: 0; }
-
+    .dpad-up    { top: 0; left: 51px; }
+    .dpad-down  { bottom: 0; left: 51px; }
+    .dpad-left  { top: 51px; left: 0; }
+    .dpad-right { top: 51px; right: 0; }
   </style>
 </head>
 <body>
 
-  <!-- 上方滿版遊戲區域 -->
   <div class="game-container">
     <div class="hud">
-      <div>分數: <span id="score">0</span></div>
-      <div>長度: <span id="length">3</span></div>
+      <div class="hud-badge">🍎 分數: <span id="score" style="color:#ff5252">0</span></div>
+      <div class="hud-badge">🐸 長度: <span id="length" style="color:#76ff03">3</span></div>
     </div>
 
-    <!-- 遊戲蓋板 (Start / Pause 畫面) -->
     <div id="overlay" class="overlay">
-      <h1 id="overlay-title">怪獸貪食蛇</h1>
-      <p id="overlay-desc">吃掉藍色藥丸可縮短長度！</p>
+      <h1 id="overlay-title">👑 青蛙王子歷險記</h1>
+      <p id="overlay-desc">吃紅蘋果 🍎 增加長度<br>吃減肥蘋果 🍏 (-1/-2) 縮短長度避開怪獸！<br>小心巡邏惡魔怪獸與城堡城牆！</p>
       <button id="start-btn" class="btn-main">START</button>
     </div>
 
     <canvas id="gameCanvas" width="400" height="400"></canvas>
   </div>
 
-  <!-- 下方操作控制器 -->
   <div class="controls-area">
-    <!-- 左側 PAUSE 按鈕 -->
     <div class="system-controls">
-      <button id="pause-btn" class="btn-sys" disabled>PAUSE</button>
+      <button id="pause-btn" class="btn-sys" disabled>⏸ PAUSE</button>
     </div>
 
-    <!-- 右下角十字鍵 (D-Pad) -->
     <div class="dpad">
       <div class="dpad-btn dpad-up" id="btn-up">▲</div>
       <div class="dpad-btn dpad-left" id="btn-left">◄</div>
@@ -207,10 +195,9 @@ const ctx = canvas.getContext("2d");
 const GRID_SIZE = 20;
 const TILE_COUNT = canvas.width / GRID_SIZE;
 
-// 遊戲狀態變數
 let snake = [];
 let dx = 0, dy = -1;
-let nextDx = 0, nextDy = -1; // 避免同一個 Tick 內連續快速按方向鍵導致自殺
+let nextDx = 0, nextDy = -1;
 let items = [];
 let monsters = [];
 let score = 0;
@@ -219,28 +206,20 @@ let gameInterval = null;
 let isRunning = false;
 let isPaused = false;
 
-// DOM 元素
 const overlay = document.getElementById("overlay");
 const overlayTitle = document.getElementById("overlay-title");
 const overlayDesc = document.getElementById("overlay-desc");
 const startBtn = document.getElementById("start-btn");
 const pauseBtn = document.getElementById("pause-btn");
 
-// 綁定 Start / Pause 按鈕事件
 startBtn.addEventListener("click", () => {
-  if (!isRunning) {
-    startGame();
-  } else if (isPaused) {
-    resumeGame();
-  }
+  if (!isRunning) startGame();
+  else if (isPaused) resumeGame();
 });
 
 pauseBtn.addEventListener("click", () => {
-  if (isRunning && !isPaused) {
-    pauseGame();
-  } else if (isPaused) {
-    resumeGame();
-  }
+  if (isRunning && !isPaused) pauseGame();
+  else if (isPaused) resumeGame();
 });
 
 function startGame() {
@@ -253,6 +232,8 @@ function startGame() {
   
   spawnItem('+1');
   spawnItem('-1');
+  spawnItem('-2');
+  spawnMonster();
   spawnMonster();
 
   isRunning = true;
@@ -260,7 +241,7 @@ function startGame() {
 
   overlay.style.display = "none";
   pauseBtn.disabled = false;
-  pauseBtn.innerText = "PAUSE";
+  pauseBtn.innerText = "⏸ PAUSE";
 
   if (gameInterval) clearInterval(gameInterval);
   gameInterval = setInterval(gameLoop, 160);
@@ -269,17 +250,17 @@ function startGame() {
 function pauseGame() {
   isPaused = true;
   clearInterval(gameInterval);
-  overlayTitle.innerText = "遊戲暫停";
-  overlayDesc.innerText = "準備好了隨時繼續";
+  overlayTitle.innerText = "⏸ 遊戲暫停";
+  overlayDesc.innerText = "青蛙王子休養中...";
   startBtn.innerText = "RESUME";
   overlay.style.display = "flex";
-  pauseBtn.innerText = "RESUME";
+  pauseBtn.innerText = "▶ RESUME";
 }
 
 function resumeGame() {
   isPaused = false;
   overlay.style.display = "none";
-  pauseBtn.innerText = "PAUSE";
+  pauseBtn.innerText = "⏸ PAUSE";
   gameInterval = setInterval(gameLoop, 160);
 }
 
@@ -288,38 +269,34 @@ function gameOver(reason) {
   clearInterval(gameInterval);
   pauseBtn.disabled = true;
 
-  overlayTitle.innerText = "GAME OVER";
-  overlayDesc.innerText = `${reason} 最終分數: ${score}`;
+  overlayTitle.innerText = "💥 GAME OVER";
+  overlayDesc.innerText = `${reason}\n最終得分: ${score} 分`;
   startBtn.innerText = "RESTART";
   overlay.style.display = "flex";
 }
 
-// 方向控制邏輯 (鍵盤 + 手機 D-Pad 通用)
 function setDirection(newDx, newDy) {
   if (!isRunning || isPaused) return;
-  // 防止直接 180 度反向走 (例如向上時不能直接按向下)
   if (newDx !== 0 && dx === -newDx) return;
   if (newDy !== 0 && dy === -newDy) return;
   nextDx = newDx;
   nextDy = newDy;
 }
 
-// 綁定鍵盤
 document.addEventListener("keydown", (e) => {
   if (e.key === "ArrowUp") setDirection(0, -1);
   else if (e.key === "ArrowDown") setDirection(0, 1);
   else if (e.key === "ArrowLeft") setDirection(-1, 0);
   else if (e.key === "ArrowRight") setDirection(1, 0);
-  else if (e.key === " " || e.key === "p") { // 空格鍵或 P 鍵暫停
+  else if (e.key === " " || e.key === "p" || e.key === "P") {
     if (isRunning) isPaused ? resumeGame() : pauseGame();
   }
 });
 
-// 綁定右下角 D-Pad (觸控 + 點擊)
 const bindDpad = (elemId, dirX, dirY) => {
   const btn = document.getElementById(elemId);
   const handlePress = (e) => {
-    e.preventDefault(); // 防止觸控時誤觸縮放或滾動
+    e.preventDefault();
     setDirection(dirX, dirY);
   };
   btn.addEventListener("touchstart", handlePress, { passive: false });
@@ -331,28 +308,54 @@ bindDpad("btn-down", 0, 1);
 bindDpad("btn-left", -1, 0);
 bindDpad("btn-right", 1, 0);
 
-// 遊戲主迴圈
+function getRandomInnerPos() {
+  return {
+    x: Math.floor(Math.random() * (TILE_COUNT - 2)) + 1,
+    y: Math.floor(Math.random() * (TILE_COUNT - 2)) + 1
+  };
+}
+
+function spawnItem(type) {
+  let pos = getRandomInnerPos();
+  items.push({ x: pos.x, y: pos.y, type: type });
+}
+
+function spawnMonster() {
+  let pos = getRandomInnerPos();
+  let dirs = [{x:1,y:0}, {x:-1,y:0}, {x:0,y:1}, {x:0,y:-1}];
+  let dir = dirs[Math.floor(Math.random() * dirs.length)];
+  monsters.push({ x: pos.x, y: pos.y, dx: dir.x, dy: dir.y });
+}
+
+function moveMonsters() {
+  for (let m of monsters) {
+    let nextX = m.x + m.dx;
+    let nextY = m.y + m.dy;
+    if (nextX <= 0 || nextX >= TILE_COUNT - 1) { m.dx *= -1; nextX = m.x + m.dx; }
+    if (nextY <= 0 || nextY >= TILE_COUNT - 1) { m.dy *= -1; nextY = m.y + m.dy; }
+    m.x = nextX;
+    m.y = nextY;
+  }
+}
+
 function gameLoop() {
   dx = nextDx;
   dy = nextDy;
 
   const head = { x: snake[0].x + dx, y: snake[0].y + dy };
 
-  // 1. 撞牆檢測
-  if (head.x < 0 || head.x >= TILE_COUNT || head.y < 0 || head.y >= TILE_COUNT) {
-    return gameOver("撞到牆壁！");
+  if (head.x <= 0 || head.x >= TILE_COUNT - 1 || head.y <= 0 || head.y >= TILE_COUNT - 1) {
+    return gameOver("撞到城堡城牆！");
   }
 
-  // 2. 撞身體檢測
   for (let seg of snake) {
     if (head.x === seg.x && head.y === seg.y) {
-      return gameOver("撞到自己！");
+      return gameOver("青蛙王子自己打結了！");
     }
   }
 
   snake.unshift(head);
 
-  // 3. 吃道具檢測
   let ateItem = false;
   for (let i = 0; i < items.length; i++) {
     if (head.x === items[i].x && head.y === items[i].y) {
@@ -363,14 +366,15 @@ function gameLoop() {
       if (type === '+1') {
         score += 100;
         spawnItem('+1');
-        if (Math.random() < 0.6) spawnItem('-1');
-      } else if (type === '-1') {
-        score += 50;
-        if (snake.length > 1) {
-          snake.pop(); // 多扣一個尾巴 (加上預設會 pop，等於長度-1)
-        } else {
-          return gameOver("蛇過短死亡！");
+        if (Math.random() < 0.5) spawnItem(Math.random() < 0.5 ? '-1' : '-2');
+      } else if (type === '-1' || type === '-2') {
+        let shrink = type === '-1' ? 1 : 2;
+        score += 60;
+        for (let s = 0; s < shrink; s++) {
+          if (snake.length > 1) snake.pop();
+          else return gameOver("青蛙王子縮小到消失了！");
         }
+        spawnItem(type);
       }
       break;
     }
@@ -378,83 +382,204 @@ function gameLoop() {
 
   if (!ateItem) snake.pop();
 
-  // 4. 移動怪物與撞怪物檢測
   moveMonsters();
   for (let m of monsters) {
     if (head.x === m.x && head.y === m.y) {
-      return gameOver("被怪物吞噬！");
+      return gameOver("被惡魔怪獸吞噬！");
     }
   }
 
   draw();
 }
 
-function getRandomPos() {
-  return {
-    x: Math.floor(Math.random() * TILE_COUNT),
-    y: Math.floor(Math.random() * TILE_COUNT)
-  };
-}
-
-function spawnItem(type) {
-  let pos = getRandomPos();
-  items.push({ x: pos.x, y: pos.y, type: type });
-}
-
-function spawnMonster() {
-  let pos = getRandomPos();
-  monsters.push({ x: pos.x, y: pos.y, dx: 1, dy: 0 });
-}
-
-function moveMonsters() {
-  for (let m of monsters) {
-    let nextX = m.x + m.dx;
-    let nextY = m.y + m.dy;
-    if (nextX < 0 || nextX >= TILE_COUNT) { m.dx *= -1; nextX = m.x + m.dx; }
-    if (nextY < 0 || nextY >= TILE_COUNT) { m.dy *= -1; nextY = m.y + m.dy; }
-    m.x = nextX;
-    m.y = nextY;
-  }
-}
-
 function draw() {
-  ctx.fillStyle = "#0d0d0d";
+  ctx.fillStyle = "#1e293b";
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-  // 畫蛇
-  snake.forEach((seg, index) => {
-    ctx.fillStyle = index === 0 ? "#4CAF50" : "#81C784";
-    ctx.fillRect(seg.x * GRID_SIZE, seg.y * GRID_SIZE, GRID_SIZE - 2, GRID_SIZE - 2);
-  });
+  ctx.strokeStyle = "#334155";
+  ctx.lineWidth = 0.5;
+  for (let i = 1; i < TILE_COUNT - 1; i++) {
+    ctx.beginPath();
+    ctx.moveTo(i * GRID_SIZE, GRID_SIZE);
+    ctx.lineTo(i * GRID_SIZE, canvas.height - GRID_SIZE);
+    ctx.stroke();
 
-  // 畫道具
-  items.forEach(item => {
-    if (item.type === '+1') {
-      ctx.fillStyle = "#FF5252";
-      ctx.beginPath();
-      ctx.arc((item.x + 0.5) * GRID_SIZE, (item.y + 0.5) * GRID_SIZE, GRID_SIZE / 2 - 2, 0, Math.PI * 2);
-      ctx.fill();
-    } else {
-      ctx.fillStyle = "#2196F3";
-      ctx.fillRect(item.x * GRID_SIZE + 3, item.y * GRID_SIZE + 3, GRID_SIZE - 6, GRID_SIZE - 6);
-      ctx.fillStyle = "#FFF";
-      ctx.font = "bold 11px Arial";
-      ctx.fillText("-1", item.x * GRID_SIZE + 4, item.y * GRID_SIZE + 15);
-    }
-  });
+    ctx.beginPath();
+    ctx.moveTo(GRID_SIZE, i * GRID_SIZE);
+    ctx.lineTo(canvas.width - GRID_SIZE, i * GRID_SIZE);
+    ctx.stroke();
+  }
 
-  // 畫怪物
-  monsters.forEach(m => {
-    ctx.fillStyle = "#E040FB";
-    ctx.fillRect(m.x * GRID_SIZE + 2, m.y * GRID_SIZE + 2, GRID_SIZE - 4, GRID_SIZE - 4);
-  });
+  drawWalls();
+  items.forEach(item => drawAppleItem(item));
+  monsters.forEach(m => drawMonster(m));
+  drawFrogPrinceSnake();
 
-  // 更新 HUD
   document.getElementById("score").innerText = score;
   document.getElementById("length").innerText = snake.length;
 }
 
-// 初始繪製背景
+function drawWalls() {
+  ctx.strokeStyle = "#0f172a";
+  ctx.lineWidth = 2;
+  for (let x = 0; x < TILE_COUNT; x++) {
+    for (let y = 0; y < TILE_COUNT; y++) {
+      if (x === 0 || x === TILE_COUNT - 1 || y === 0 || y === TILE_COUNT - 1) {
+        ctx.fillStyle = "#334155";
+        ctx.fillRect(x * GRID_SIZE, y * GRID_SIZE, GRID_SIZE, GRID_SIZE);
+        ctx.fillStyle = "#64748b";
+        ctx.fillRect(x * GRID_SIZE + 1, y * GRID_SIZE + 1, GRID_SIZE - 2, 4);
+        ctx.fillStyle = "#1e293b";
+        ctx.fillRect(x * GRID_SIZE + 1, y * GRID_SIZE + GRID_SIZE - 4, GRID_SIZE - 2, 3);
+        ctx.strokeRect(x * GRID_SIZE, y * GRID_SIZE, GRID_SIZE, GRID_SIZE);
+      }
+    }
+  }
+}
+
+function drawAppleItem(item) {
+  const cx = (item.x + 0.5) * GRID_SIZE;
+  const cy = (item.y + 0.5) * GRID_SIZE;
+  const radius = GRID_SIZE / 2 - 2;
+
+  let isRedApple = (item.type === '+1');
+  let bodyColor = isRedApple ? "#ef4444" : "#10b981";
+
+  ctx.fillStyle = bodyColor;
+  ctx.beginPath();
+  ctx.arc(cx, cy + 1, radius, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.fillStyle = "rgba(255, 255, 255, 0.4)";
+  ctx.beginPath();
+  ctx.arc(cx - 3, cy - 3, radius * 0.35, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.fillStyle = "#84cc16";
+  ctx.beginPath();
+  ctx.ellipse(cx + 2, cy - radius + 1, 4, 2, Math.PI / 4, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.strokeStyle = "#78350f";
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  ctx.moveTo(cx, cy - radius + 2);
+  ctx.lineTo(cx - 1, cy - radius - 2);
+  ctx.stroke();
+
+  if (!isRedApple) {
+    ctx.fillStyle = "#ffffff";
+    ctx.font = "900 11px sans-serif";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText(item.type, cx, cy + 2);
+  }
+}
+
+function drawMonster(m) {
+  const x = m.x * GRID_SIZE;
+  const y = m.y * GRID_SIZE;
+
+  ctx.fillStyle = "#a855f7";
+  ctx.beginPath();
+  ctx.roundRect(x + 2, y + 2, GRID_SIZE - 4, GRID_SIZE - 4, 6);
+  ctx.fill();
+
+  ctx.fillStyle = "#f43f5e";
+  ctx.beginPath();
+  ctx.moveTo(x + 3, y + 4); ctx.lineTo(x + 1, y - 2); ctx.lineTo(x + 7, y + 3);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.moveTo(x + GRID_SIZE - 3, y + 4); ctx.lineTo(x + GRID_SIZE - 1, y - 2); ctx.lineTo(x + GRID_SIZE - 7, y + 3);
+  ctx.fill();
+
+  ctx.fillStyle = "#facc15";
+  ctx.beginPath();
+  ctx.arc(x + 6, y + 8, 3, 0, Math.PI * 2);
+  ctx.arc(x + 14, y + 8, 3, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.fillStyle = "#dc2626";
+  ctx.beginPath();
+  ctx.arc(x + 6, y + 8, 1.5, 0, Math.PI * 2);
+  ctx.arc(x + 14, y + 8, 1.5, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.fillStyle = "#1e1b4b";
+  ctx.fillRect(x + 5, y + 13, 10, 4);
+
+  ctx.fillStyle = "#ffffff";
+  ctx.beginPath();
+  ctx.moveTo(x + 6, y + 13); ctx.lineTo(x + 8, y + 16); ctx.lineTo(x + 10, y + 13);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.moveTo(x + 10, y + 13); ctx.lineTo(x + 12, y + 16); ctx.lineTo(x + 14, y + 13);
+  ctx.fill();
+}
+
+function drawFrogPrinceSnake() {
+  snake.forEach((seg, index) => {
+    const cx = (seg.x + 0.5) * GRID_SIZE;
+    const cy = (seg.y + 0.5) * GRID_SIZE;
+
+    if (index === 0) {
+      ctx.fillStyle = "#4ade80";
+      ctx.beginPath();
+      ctx.arc(cx, cy + 1, GRID_SIZE / 2 - 1, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.fillStyle = "#22c55e";
+      ctx.beginPath();
+      ctx.arc(cx - 5, cy - 6, 4.5, 0, Math.PI * 2);
+      ctx.arc(cx + 5, cy - 6, 4.5, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.fillStyle = "#ffffff";
+      ctx.beginPath();
+      ctx.arc(cx - 5, cy - 6, 3, 0, Math.PI * 2);
+      ctx.arc(cx + 5, cy - 6, 3, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.fillStyle = "#000000";
+      ctx.beginPath();
+      ctx.arc(cx - 5, cy - 6, 1.5, 0, Math.PI * 2);
+      ctx.arc(cx + 5, cy - 6, 1.5, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.fillStyle = "#eab308";
+      ctx.beginPath();
+      ctx.moveTo(cx - 5, cy - 8);
+      ctx.lineTo(cx - 6, cy - 14);
+      ctx.lineTo(cx - 2, cy - 10);
+      ctx.lineTo(cx, cy - 15);
+      ctx.lineTo(cx + 2, cy - 10);
+      ctx.lineTo(cx + 6, cy - 14);
+      ctx.lineTo(cx + 5, cy - 8);
+      ctx.closePath();
+      ctx.fill();
+
+      ctx.fillStyle = "#ef4444";
+      ctx.fillRect(cx - 1, cy - 11, 2, 2);
+
+      ctx.fillStyle = "#f472b6";
+      ctx.beginPath();
+      ctx.arc(cx - 6, cy + 2, 2, 0, Math.PI * 2);
+      ctx.arc(cx + 6, cy + 2, 2, 0, Math.PI * 2);
+      ctx.fill();
+    } else {
+      ctx.fillStyle = index % 2 === 0 ? "#4ade80" : "#22c55e";
+      ctx.beginPath();
+      ctx.arc(cx, cy, (GRID_SIZE / 2) - 2, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.fillStyle = "#15803d";
+      ctx.beginPath();
+      ctx.arc(cx - 2, cy - 2, 1.5, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  });
+}
+
 draw();
 </script>
 </body>
