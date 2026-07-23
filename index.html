@@ -2,35 +2,203 @@
 <html lang="zh-Hant">
 <head>
   <meta charset="UTF-8">
-  <title>變種貪食蛇：怪獸與減肥藥</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>極限貪食蛇 Mobile</title>
   <style>
+    * {
+      box-sizing: border-box;
+      user-select: none; /* 防止手機按壓時跳出選取文字 */
+      -webkit-user-select: none;
+      touch-action: manipulation; /* 停用手機雙擊縮放 */
+    }
+
     body {
-      background-color: #1a1a1a;
+      margin: 0;
+      padding: 0;
+      background-color: #121212;
       color: #fff;
-      font-family: Arial, sans-serif;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
       display: flex;
       flex-direction: column;
-      align-items: center;
-      justify-content: center;
       height: 100vh;
-      margin: 0;
+      overflow: hidden;
     }
-    #game-info {
-      font-size: 20px;
-      margin-bottom: 10px;
-    }
-    canvas {
-      border: 3px solid #444;
+
+    /* 上方 100% 幅寬區域 (遊戲畫面區) */
+    .game-container {
+      position: relative;
+      width: 100vw;
       background-color: #000;
+      display: flex;
+      justify-content: center;
+      align-items: center;
     }
+
+    canvas {
+      width: 100vw;
+      height: 100vw; /* 保持正方形比例 (也可隨需求改為 calc) */
+      max-height: 50vh; /* 避免在長螢幕上佔據太多空間 */
+      background-color: #0d0d0d;
+      display: block;
+    }
+
+    /* 遊戲狀態覆蓋層 (Start / Pause / Game Over) */
+    .overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.75);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      z-index: 10;
+    }
+
+    .overlay h1 {
+      margin: 0 0 10px 0;
+      font-size: 24px;
+      color: #4CAF50;
+    }
+
+    .overlay p {
+      margin: 0 0 20px 0;
+      font-size: 14px;
+      color: #ccc;
+    }
+
+    .btn-main {
+      padding: 12px 32px;
+      font-size: 18px;
+      font-weight: bold;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 25px;
+      box-shadow: 0 4px 10px rgba(76, 175, 80, 0.4);
+      cursor: pointer;
+    }
+
+    .btn-main:active {
+      transform: scale(0.95);
+    }
+
+    /* HUD 分數資訊列 */
+    .hud {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      right: 10px;
+      display: flex;
+      justify-content: space-between;
+      font-size: 14px;
+      font-weight: bold;
+      color: #fff;
+      text-shadow: 1px 1px 2px #000;
+      pointer-events: none;
+      z-index: 5;
+    }
+
+    /* 下方操作控制區 */
+    .controls-area {
+      flex: 1;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 15px 20px;
+      background-color: #1a1a1a;
+    }
+
+    /* 左側系統按鈕區 (Pause / Resume) */
+    .system-controls {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .btn-sys {
+      padding: 10px 16px;
+      background: #333;
+      color: #fff;
+      border: 1px solid #555;
+      border-radius: 8px;
+      font-size: 14px;
+    }
+
+    .btn-sys:active {
+      background: #555;
+    }
+
+    /* 下方右側十字鍵 (D-Pad) */
+    .dpad {
+      position: relative;
+      width: 140px;
+      height: 140px;
+    }
+
+    .dpad-btn {
+      position: absolute;
+      width: 44px;
+      height: 44px;
+      background-color: #333;
+      border: 2px solid #555;
+      border-radius: 8px;
+      color: white;
+      font-size: 18px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+    }
+
+    .dpad-btn:active {
+      background-color: #4CAF50;
+      border-color: #81C784;
+    }
+
+    .dpad-up    { top: 0; left: 48px; }
+    .dpad-down  { bottom: 0; left: 48px; }
+    .dpad-left  { top: 48px; left: 0; }
+    .dpad-right { top: 48px; right: 0; }
+
   </style>
 </head>
 <body>
 
-  <div id="game-info">
-    分數: <span id="score">0</span> | 長度: <span id="length">3</span>
+  <!-- 上方滿版遊戲區域 -->
+  <div class="game-container">
+    <div class="hud">
+      <div>分數: <span id="score">0</span></div>
+      <div>長度: <span id="length">3</span></div>
+    </div>
+
+    <!-- 遊戲蓋板 (Start / Pause 畫面) -->
+    <div id="overlay" class="overlay">
+      <h1 id="overlay-title">怪獸貪食蛇</h1>
+      <p id="overlay-desc">吃掉藍色藥丸可縮短長度！</p>
+      <button id="start-btn" class="btn-main">START</button>
+    </div>
+
+    <canvas id="gameCanvas" width="400" height="400"></canvas>
   </div>
-  <canvas id="gameCanvas" width="400" height="400"></canvas>
+
+  <!-- 下方操作控制器 -->
+  <div class="controls-area">
+    <!-- 左側 PAUSE 按鈕 -->
+    <div class="system-controls">
+      <button id="pause-btn" class="btn-sys" disabled>PAUSE</button>
+    </div>
+
+    <!-- 右下角十字鍵 (D-Pad) -->
+    <div class="dpad">
+      <div class="dpad-btn dpad-up" id="btn-up">▲</div>
+      <div class="dpad-btn dpad-left" id="btn-left">◄</div>
+      <div class="dpad-btn dpad-right" id="btn-right">►</div>
+      <div class="dpad-btn dpad-down" id="btn-down">▼</div>
+    </div>
+  </div>
 
 <script>
 const canvas = document.getElementById("gameCanvas");
@@ -39,30 +207,186 @@ const ctx = canvas.getContext("2d");
 const GRID_SIZE = 20;
 const TILE_COUNT = canvas.width / GRID_SIZE;
 
-// 遊戲狀態
-let snake = [{x: 10, y: 10}, {x: 10, y: 11}, {x: 10, y: 12}];
-let dx = 0, dy = -1; // 初始向上移動
-let items = [];      // 道具陣列 (+1, -1, -2)
-let monsters = [];   // 怪物陣列
+// 遊戲狀態變數
+let snake = [];
+let dx = 0, dy = -1;
+let nextDx = 0, nextDy = -1; // 避免同一個 Tick 內連續快速按方向鍵導致自殺
+let items = [];
+let monsters = [];
 let score = 0;
-let gameInterval;
+let gameInterval = null;
 
-// 初始化
-function initGame() {
+let isRunning = false;
+let isPaused = false;
+
+// DOM 元素
+const overlay = document.getElementById("overlay");
+const overlayTitle = document.getElementById("overlay-title");
+const overlayDesc = document.getElementById("overlay-desc");
+const startBtn = document.getElementById("start-btn");
+const pauseBtn = document.getElementById("pause-btn");
+
+// 綁定 Start / Pause 按鈕事件
+startBtn.addEventListener("click", () => {
+  if (!isRunning) {
+    startGame();
+  } else if (isPaused) {
+    resumeGame();
+  }
+});
+
+pauseBtn.addEventListener("click", () => {
+  if (isRunning && !isPaused) {
+    pauseGame();
+  } else if (isPaused) {
+    resumeGame();
+  }
+});
+
+function startGame() {
   snake = [{x: 10, y: 10}, {x: 10, y: 11}, {x: 10, y: 12}];
   dx = 0; dy = -1;
+  nextDx = 0; nextDy = -1;
   score = 0;
   items = [];
   monsters = [];
   
-  // 生成初始道具與怪物
   spawnItem('+1');
   spawnItem('-1');
   spawnMonster();
-  spawnMonster();
+
+  isRunning = true;
+  isPaused = false;
+
+  overlay.style.display = "none";
+  pauseBtn.disabled = false;
+  pauseBtn.innerText = "PAUSE";
 
   if (gameInterval) clearInterval(gameInterval);
-  gameInterval = setInterval(gameLoop, 150); // 遊戲刷新率
+  gameInterval = setInterval(gameLoop, 160);
+}
+
+function pauseGame() {
+  isPaused = true;
+  clearInterval(gameInterval);
+  overlayTitle.innerText = "遊戲暫停";
+  overlayDesc.innerText = "準備好了隨時繼續";
+  startBtn.innerText = "RESUME";
+  overlay.style.display = "flex";
+  pauseBtn.innerText = "RESUME";
+}
+
+function resumeGame() {
+  isPaused = false;
+  overlay.style.display = "none";
+  pauseBtn.innerText = "PAUSE";
+  gameInterval = setInterval(gameLoop, 160);
+}
+
+function gameOver(reason) {
+  isRunning = false;
+  clearInterval(gameInterval);
+  pauseBtn.disabled = true;
+
+  overlayTitle.innerText = "GAME OVER";
+  overlayDesc.innerText = `${reason} 最終分數: ${score}`;
+  startBtn.innerText = "RESTART";
+  overlay.style.display = "flex";
+}
+
+// 方向控制邏輯 (鍵盤 + 手機 D-Pad 通用)
+function setDirection(newDx, newDy) {
+  if (!isRunning || isPaused) return;
+  // 防止直接 180 度反向走 (例如向上時不能直接按向下)
+  if (newDx !== 0 && dx === -newDx) return;
+  if (newDy !== 0 && dy === -newDy) return;
+  nextDx = newDx;
+  nextDy = newDy;
+}
+
+// 綁定鍵盤
+document.addEventListener("keydown", (e) => {
+  if (e.key === "ArrowUp") setDirection(0, -1);
+  else if (e.key === "ArrowDown") setDirection(0, 1);
+  else if (e.key === "ArrowLeft") setDirection(-1, 0);
+  else if (e.key === "ArrowRight") setDirection(1, 0);
+  else if (e.key === " " || e.key === "p") { // 空格鍵或 P 鍵暫停
+    if (isRunning) isPaused ? resumeGame() : pauseGame();
+  }
+});
+
+// 綁定右下角 D-Pad (觸控 + 點擊)
+const bindDpad = (elemId, dirX, dirY) => {
+  const btn = document.getElementById(elemId);
+  const handlePress = (e) => {
+    e.preventDefault(); // 防止觸控時誤觸縮放或滾動
+    setDirection(dirX, dirY);
+  };
+  btn.addEventListener("touchstart", handlePress, { passive: false });
+  btn.addEventListener("mousedown", handlePress);
+};
+
+bindDpad("btn-up", 0, -1);
+bindDpad("btn-down", 0, 1);
+bindDpad("btn-left", -1, 0);
+bindDpad("btn-right", 1, 0);
+
+// 遊戲主迴圈
+function gameLoop() {
+  dx = nextDx;
+  dy = nextDy;
+
+  const head = { x: snake[0].x + dx, y: snake[0].y + dy };
+
+  // 1. 撞牆檢測
+  if (head.x < 0 || head.x >= TILE_COUNT || head.y < 0 || head.y >= TILE_COUNT) {
+    return gameOver("撞到牆壁！");
+  }
+
+  // 2. 撞身體檢測
+  for (let seg of snake) {
+    if (head.x === seg.x && head.y === seg.y) {
+      return gameOver("撞到自己！");
+    }
+  }
+
+  snake.unshift(head);
+
+  // 3. 吃道具檢測
+  let ateItem = false;
+  for (let i = 0; i < items.length; i++) {
+    if (head.x === items[i].x && head.y === items[i].y) {
+      ateItem = true;
+      let type = items[i].type;
+      items.splice(i, 1);
+
+      if (type === '+1') {
+        score += 100;
+        spawnItem('+1');
+        if (Math.random() < 0.6) spawnItem('-1');
+      } else if (type === '-1') {
+        score += 50;
+        if (snake.length > 1) {
+          snake.pop(); // 多扣一個尾巴 (加上預設會 pop，等於長度-1)
+        } else {
+          return gameOver("蛇過短死亡！");
+        }
+      }
+      break;
+    }
+  }
+
+  if (!ateItem) snake.pop();
+
+  // 4. 移動怪物與撞怪物檢測
+  moveMonsters();
+  for (let m of monsters) {
+    if (head.x === m.x && head.y === m.y) {
+      return gameOver("被怪物吞噬！");
+    }
+  }
+
+  draw();
 }
 
 function getRandomPos() {
@@ -79,142 +403,59 @@ function spawnItem(type) {
 
 function spawnMonster() {
   let pos = getRandomPos();
-  // 隨機方向
-  let dirs = [{x:1, y:0}, {x:-1, y:0}, {x:0, y:1}, {x:0, y:-1}];
-  let dir = dirs[Math.floor(Math.random() * dirs.length)];
-  monsters.push({ x: pos.x, y: pos.y, dx: dir.x, dy: dir.y });
-}
-
-// 鍵盤控制
-document.addEventListener("keydown", (e) => {
-  if (e.key === "ArrowUp" && dy === 0) { dx = 0; dy = -1; }
-  else if (e.key === "ArrowDown" && dy === 0) { dx = 0; dy = 1; }
-  else if (e.key === "ArrowLeft" && dx === 0) { dx = -1; dy = 0; }
-  else if (e.key === "ArrowRight" && dx === 0) { dx = 1; dy = 0; }
-});
-
-function gameLoop() {
-  // 1. 移動蛇頭
-  const head = { x: snake[0].x + dx, y: snake[0].y + dy };
-
-  // 2. 撞牆檢測
-  if (head.x < 0 || head.x >= TILE_COUNT || head.y < 0 || head.y >= TILE_COUNT) {
-    return gameOver("撞到牆壁！");
-  }
-
-  // 3. 撞自身檢測
-  for (let segment of snake) {
-    if (head.x === segment.x && head.y === segment.y) {
-      return gameOver("撞到自己！");
-    }
-  }
-
-  snake.unshift(head); // 預設增加新頭部
-
-  // 4. 道具吃取判定
-  let ateItem = false;
-  for (let i = 0; i < items.length; i++) {
-    if (head.x === items[i].x && head.y === items[i].y) {
-      ateItem = true;
-      let type = items[i].type;
-      items.splice(i, 1); // 移除被吃的道具
-
-      if (type === '+1') {
-        score += 100;
-        spawnItem('+1'); // 補回一個 +1
-        if (Math.random() < 0.5) spawnItem('-1'); // 隨機補減肥藥
-      } else if (type === '-1' || type === '-2') {
-        let shrink = type === '-1' ? 1 : 2;
-        score += 50;
-        // 額外移除尾巴來縮短蛇長度
-        for (let s = 0; s < shrink; s++) {
-          if (snake.length > 1) snake.pop();
-          else return gameOver("蛇太短死亡！");
-        }
-      }
-      break;
-    }
-  }
-
-  // 如果沒吃到加長道具，正常尾部前進（移除尾巴）
-  if (!ateItem) {
-    snake.pop();
-  }
-
-  // 5. 移動怪物
-  moveMonsters();
-
-  // 6. 怪物碰撞檢測（蛇頭撞怪物）
-  for (let m of monsters) {
-    if (head.x === m.x && head.y === m.y) {
-      return gameOver("被怪物吃掉了！");
-    }
-  }
-
-  // 7. 渲染畫面
-  draw();
+  monsters.push({ x: pos.x, y: pos.y, dx: 1, dy: 0 });
 }
 
 function moveMonsters() {
   for (let m of monsters) {
     let nextX = m.x + m.dx;
     let nextY = m.y + m.dy;
-
-    // 怪物撞牆會反彈
     if (nextX < 0 || nextX >= TILE_COUNT) { m.dx *= -1; nextX = m.x + m.dx; }
     if (nextY < 0 || nextY >= TILE_COUNT) { m.dy *= -1; nextY = m.y + m.dy; }
-
     m.x = nextX;
     m.y = nextY;
   }
 }
 
 function draw() {
-  // 清空畫布
-  ctx.fillStyle = "#000";
+  ctx.fillStyle = "#0d0d0d";
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 
   // 畫蛇
   snake.forEach((seg, index) => {
-    ctx.fillStyle = index === 0 ? "#4CAF50" : "#81C784"; // 蛇頭深綠，蛇身淺綠
+    ctx.fillStyle = index === 0 ? "#4CAF50" : "#81C784";
     ctx.fillRect(seg.x * GRID_SIZE, seg.y * GRID_SIZE, GRID_SIZE - 2, GRID_SIZE - 2);
   });
 
   // 畫道具
   items.forEach(item => {
     if (item.type === '+1') {
-      ctx.fillStyle = "#FF5252"; // 紅色蘋果
+      ctx.fillStyle = "#FF5252";
       ctx.beginPath();
       ctx.arc((item.x + 0.5) * GRID_SIZE, (item.y + 0.5) * GRID_SIZE, GRID_SIZE / 2 - 2, 0, Math.PI * 2);
       ctx.fill();
     } else {
-      ctx.fillStyle = "#2196F3"; // 藍色減肥藥
-      ctx.fillRect(item.x * GRID_SIZE + 4, item.y * GRID_SIZE + 4, GRID_SIZE - 8, GRID_SIZE - 8);
+      ctx.fillStyle = "#2196F3";
+      ctx.fillRect(item.x * GRID_SIZE + 3, item.y * GRID_SIZE + 3, GRID_SIZE - 6, GRID_SIZE - 6);
       ctx.fillStyle = "#FFF";
-      ctx.font = "12px Arial";
-      ctx.fillText(item.type, item.x * GRID_SIZE + 2, item.y * GRID_SIZE + 15);
+      ctx.font = "bold 11px Arial";
+      ctx.fillText("-1", item.x * GRID_SIZE + 4, item.y * GRID_SIZE + 15);
     }
   });
 
   // 畫怪物
   monsters.forEach(m => {
-    ctx.fillStyle = "#E040FB"; // 紫色怪物
+    ctx.fillStyle = "#E040FB";
     ctx.fillRect(m.x * GRID_SIZE + 2, m.y * GRID_SIZE + 2, GRID_SIZE - 4, GRID_SIZE - 4);
   });
 
-  // 更新 UI
+  // 更新 HUD
   document.getElementById("score").innerText = score;
   document.getElementById("length").innerText = snake.length;
 }
 
-function gameOver(reason) {
-  clearInterval(gameInterval);
-  alert(`Game Over! ${reason}\n最終分數: ${score}`);
-  initGame();
-}
-
-// 啟動遊戲
-initGame();
+// 初始繪製背景
+draw();
 </script>
 </body>
 </html>
